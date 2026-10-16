@@ -4,13 +4,13 @@
     "name": "limjeongsik"
   },
   "metadata": {
-    "description": "reel 로컬 개발용 마켓플레이스"
+    "description": "커밋 속 명장면을 골라 이력서 · 포트폴리오로 엮는 Claude Code 플러그인"
   },
   "plugins": [
     {
       "name": "reel",
       "source": "./",
-      "description": "프로젝트 → 이력서/포트폴리오 변환 플러그인 (로컬 개발용)"
+      "description": "프로젝트 저장소를 분석해 이력서 · 경력기술서 · 포트폴리오 원고와 화면 이미지를 만듭니다"
     }
   ]
 }
