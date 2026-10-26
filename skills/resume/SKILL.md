@@ -89,6 +89,8 @@ description: work/profile.md와 work/cases/를 바탕으로 이력서 · 경력�
 ## 쓰는 법
 
 - 다 쓴 뒤 `../../shared/writing-rules.md` 5-1의 표로 문장을 한 번 더 고친다. 번역투 · 명사 나열 · 커밋 메시지 말투가 남아 있지 않게.
+- 쓰기 전 `check`, 쓴 뒤 `record` — `../../shared/work-layout.md`의 덮어쓰기 규칙. 사용자가 고친 원고면 `*.new.md`에 쓴다.
+- 마지막에 `../../shared/scripts/check-work.sh work`를 돌려 오류(✗)를 고친다.
 
 - 1장 bullet은 "행동 동사 + 무엇을 + 어떻게(기술) + 결과"를 한 줄에. 결과가 수치면 수치를, 없으면 확인 수준을
   ("양 플랫폼 실기기 확인"). 한 줄이 두 줄을 넘으면 너무 긴 것이다.

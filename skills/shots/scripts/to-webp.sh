@@ -17,15 +17,27 @@ src="$1"; dest="$2"; max_w="${3:-1080}"; quality="${4:-82}"
 mkdir -p "$dest"
 
 if ! command -v cwebp >/dev/null; then
-    echo "cwebp가 없습니다: brew install webp" >&2
+    echo "cwebp가 없습니다: brew install webp (Linux: apt install webp)" >&2
     exit 1
 fi
+
+# 이미지 폭(px). macOS는 sips, 그 밖에는 ImageMagick, 둘 다 없으면 file 출력에서 읽는다.
+width_of() {
+    if command -v sips >/dev/null; then
+        sips -g pixelWidth "$1" 2>/dev/null | awk '/pixelWidth/ {print $2}'
+    elif command -v identify >/dev/null; then
+        identify -format '%w' "$1[0]" 2>/dev/null
+    else
+        # JPEG는 "density 72x72"가 앞에 나오므로 마지막 WxH를 쓴다.
+        file -b "$1" | grep -oE '[0-9]+ ?x ?[0-9]+' | tail -1 | grep -oE '^[0-9]+' || true
+    fi
+}
 
 convert_one() {
     local in="$1"
     local name; name="$(basename "${in%.*}")"
     local out="$dest/$name.webp"
-    local w; w="$(sips -g pixelWidth "$in" 2>/dev/null | awk '/pixelWidth/ {print $2}')"
+    local w; w="$(width_of "$in")"
     local resize=()
     if [ -n "$w" ] && [ "$w" -gt "$max_w" ]; then
         resize=(-resize "$max_w" 0)

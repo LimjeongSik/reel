@@ -84,6 +84,8 @@ description: work/profile.md, work/cases/, work/images/를 바탕으로 포트�
 ## 쓰는 법
 
 - 다 쓴 뒤 `../../shared/writing-rules.md` 5-1의 표로 문장을 한 번 더 고친다. 번역투 · 명사 나열 · 커밋 메시지 말투가 남아 있지 않게.
+- 쓰기 전 `check`, 쓴 뒤 `record` — `../../shared/work-layout.md`의 덮어쓰기 규칙. 사용자가 고친 원고면 `*.new.md`에 쓴다.
+- 마지막에 `../../shared/scripts/check-work.sh work`를 돌려 오류(✗)를 고친다.
 
 - problem · approach · result는 각각 2~4문장. cases/ 파일의 문제 · 해결 · 결과를 줄이되, 원인이 있던 층은 남긴다.
 - changes의 코드는 cases/ 파일의 발췌를 그대로 옮긴다. 여기서 새로 줄이거나 다듬지 않는다.

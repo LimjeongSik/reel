@@ -33,6 +33,8 @@
 | `/reel:cut images` | 화면 이미지만 |
 | `/reel:cut all ~/work/my-app` | 지정한 경로의 프로젝트를 분석 |
 
+다시 실행하면 지난번에 분석한 커밋 이후의 변경만 읽고, 새 사례 후보만 추가합니다. 바뀐 커밋이 없으면 분석을 건너뜁니다. 처음부터 다시 하려면 `--full`을 붙입니다.
+
 처음에 저장소를 훑고 나면, 코드만으로 알 수 없는 것(어느 커밋이 내 것인지, 직접 판단하고 검증한 부분 등)을 먼저 묻습니다. "나중에"라고 답하면 `TODO`로 남겨 두고 계속 진행합니다. 슬래시 명령 대신 "이 프로젝트로 이력서 원고 만들어줘"처럼 말해도 됩니다.
 
 ## 결과물
@@ -46,8 +48,11 @@ work/
 ├── resume.md       이력서 · 경력기술서 원고
 ├── portfolio.md    포트폴리오 원고
 ├── images/         화면 이미지와 설명 파일 images.md
-└── README.md       만든 파일과 쓰임, 남은 TODO, 찍지 못한 화면
+├── README.md       만든 파일과 쓰임, 남은 TODO, 찍지 못한 화면
+└── .reel/          쓴 파일의 해시, 분석한 커밋, 실행 전 백업
 ```
+
+직접 고친 원고는 덮어쓰지 않습니다. reel이 쓴 뒤 바뀐 파일은 해시로 가려내서 새 원고를 `*.new.md`로 따로 쓰고, 실행할 때마다 원고를 `.reel/backup/`에 백업합니다. 다 쓰고 나면 원고에 인용한 커밋 해시와 날짜가 실제 이력과 맞는지, 참조한 이미지가 있는지 스크립트로 확인합니다.
 
 | 파일 | 담는 내용 | 쓰는 곳 |
 |---|---|---|
@@ -112,7 +117,7 @@ images     scout → shots
 - Claude Code
 - 분석할 프로젝트. git 저장소여야 전/후 코드와 커밋 근거를 뽑을 수 있습니다. git이 아니어도 동작하지만 결과가 얕아집니다.
 - 웹 화면 캡처: Node.js(`npx`). Playwright 1.64.1을 쓰고, 브라우저가 없으면 `npx playwright@1.64.1 install chromium-headless-shell`로 받습니다.
-- 이미지 변환: `cwebp` (`brew install webp`)
+- 이미지 변환: `cwebp` (`brew install webp`, Linux는 `apt install webp`)
 - 앱 화면 캡처: Xcode 시뮬레이터(`xcrun simctl`) 또는 Android `adb`. 앱 프로젝트일 때만 필요합니다.
 
 ## 개발
@@ -122,6 +127,8 @@ images     scout → shots
 commands/cut.md          /reel:cut
 agents/scout-analyst.md  큰 저장소 하위 영역 조사용 (읽기 전용)
 shared/                  writing-rules.md · work-layout.md
+└── scripts/             work-guard.sh(덮어쓰기 보호 · 분석 커밋 기록) · check-work.sh(원고 점검)
+tests/run.sh             스크립트 회귀 테스트
 skills/
 ├── scout/
 ├── clips/
@@ -130,7 +137,7 @@ skills/
 └── shots/               scripts/capture-web.sh · capture-device.sh · to-webp.sh
 ```
 
-저장소를 받아 고친 뒤에는 `--plugin-dir`로 실제 프로젝트에서 써 봅니다. 설치한 reel과 함께 쓰면 같은 플러그인이 두 번 잡히니, 먼저 `/plugin`에서 설치한 쪽을 꺼 두세요.
+스크립트를 고쳤으면 `tests/run.sh`를 돌립니다. 저장소를 받아 고친 뒤에는 `--plugin-dir`로 실제 프로젝트에서 써 봅니다. 설치한 reel과 함께 쓰면 같은 플러그인이 두 번 잡히니, 먼저 `/plugin`에서 설치한 쪽을 꺼 두세요.
 
 ```bash
 git clone https://github.com/LimjeongSik/reel.git

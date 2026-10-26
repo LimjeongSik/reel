@@ -1,6 +1,6 @@
 {
   "name": "reel",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "커밋 속 명장면을 골라 엮는 하이라이트 릴 — 프로젝트 저장소를 분석해 work/ 폴더에 이력서 · 경력기술서 · 포트폴리오 원고(md)와 화면 이미지를 만드는 플러그인",
   "author": {
     "name": "limjeongsik",
