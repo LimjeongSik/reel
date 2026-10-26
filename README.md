@@ -32,8 +32,9 @@
 | `/reel:cut portfolio` | 사례, 이미지, 포트폴리오 원고 |
 | `/reel:cut images` | 화면 이미지만 |
 | `/reel:cut all ~/work/my-app` | 지정한 경로의 프로젝트를 분석 |
+| `/reel:cut all --full` | 지난 분석 기록을 무시하고 처음부터 다시 분석 |
 
-다시 실행하면 지난번에 분석한 커밋 이후의 변경만 읽고, 새 사례 후보만 추가합니다. 바뀐 커밋이 없으면 분석을 건너뜁니다. 처음부터 다시 하려면 `--full`을 붙입니다.
+다시 실행하면 지난번에 분석한 커밋 이후의 변경만 읽고, 새 사례 후보만 추가합니다. 바뀐 커밋이 없으면 분석을 건너뜁니다. rebase로 이력이 바뀌었으면 알아서 처음부터 다시 분석합니다.
 
 처음에 저장소를 훑고 나면, 코드만으로 알 수 없는 것(어느 커밋이 내 것인지, 직접 판단하고 검증한 부분 등)을 먼저 묻습니다. "나중에"라고 답하면 `TODO`로 남겨 두고 계속 진행합니다. 슬래시 명령 대신 "이 프로젝트로 이력서 원고 만들어줘"처럼 말해도 됩니다.
 
@@ -90,15 +91,18 @@ work/
 | 촬영 | [shots](skills/shots) | profile의 화면 목록 | `images/` | 있는 이미지를 먼저 쓰고, 웹은 Playwright로, 앱은 시뮬레이터나 adb로 찍음 |
 | 편집 | [resume](skills/resume) | profile, cases | `resume.md` | 칸 길이에 맞춰 미리 잘라 둔 원고. 경력에는 역할과 영향, 프로젝트에는 기술 문제 |
 | 편집 | [portfolio](skills/portfolio) | profile, cases, images | `portfolio.md` | 포트폴리오 사이트의 `Project` 타입과 같은 필드 단위로 씀 |
+| 검수 | [check-work.sh](shared/scripts/check-work.sh) | work/ | 점검 결과 | 인용한 커밋 해시 · 날짜, 이미지 경로, 사례 번호를 실제와 대조. 틀린 곳은 고친 뒤 다시 점검 |
 
 모드에 따라 지나가는 단계가 다릅니다.
 
 ```
-all        scout → clips → shots → resume → portfolio
-resume     scout → clips → resume
-portfolio  scout → clips → shots → portfolio
-images     scout → shots
+all        scout → clips → shots → resume → portfolio → 검수
+resume     scout → clips → resume → 검수
+portfolio  scout → clips → shots → portfolio → 검수
+images     scout → shots → 검수
 ```
+
+모든 단계는 시작할 때 [work-guard.sh](shared/scripts/work-guard.sh)로 원고를 백업하고, 파일을 쓸 때마다 사람이 고친 원고인지 확인합니다.
 
 저장소가 크면 scout가 하위 영역 조사를 [scout-analyst](agents/scout-analyst.md) 에이전트에 나눠 맡기기도 합니다. 이 에이전트는 읽기만 하고 아무것도 고치지 않습니다.
 
@@ -108,6 +112,7 @@ images     scout → shots
 
 - **수치는 실측값만 씁니다.** 저장소에 기록된 숫자만 쓰고, 모르는 값은 `<!-- TODO -->`로 남깁니다.
 - **코드는 고치지 않고 발췌합니다.** git 이력에 있는 그대로 옮기고, 줄일 때는 `// ...`만 씁니다.
+- **인용한 근거는 기계로 대조합니다.** 원고에 적은 커밋 해시와 날짜가 실제 이력에 없으면 오류로 보고 고칩니다.
 - **어디까지 확인했는지 밝힙니다.** 실기기에서 확인했는지, 테스트로 고정했는지, 정적 검증만 했는지 구분합니다.
 - **조건이 있으면 조건을 붙입니다.** OS나 기기에 따라 달라지는 내용은 그 조건을 함께 적습니다.
 - **같은 이야기를 두 번 하지 않습니다.** 경력 bullet과 프로젝트 사례가 같은 내용을 반복하지 않도록 나눕니다.
@@ -149,6 +154,9 @@ claude --plugin-dir <reel을 받은 경로>
 
 - [ ] 영문 이력서 원고
 - [ ] 여러 프로젝트의 결과를 모아 이력서 한 부를 통째로 만드는 스킬
+- [ ] 종류가 다른 샘플 저장소(웹 · 앱 · 모노레포)로 끝까지 돌리는 E2E 테스트
+- [ ] 전 → 후 코드 발췌가 해당 커밋의 실제 코드와 같은지 대조
+- [ ] 로그인이 필요한 화면까지 자동으로 찍는 라우트 탐색
 
 ## 라이선스
 
