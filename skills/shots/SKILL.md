@@ -6,7 +6,7 @@ description: 프로젝트의 실제 화면 스크린샷과 포트폴리오에 �
 # 화면 · 이미지 수집 → work/images/
 
 먼저 이 스킬 폴더 기준 `../../shared/work-layout.md`를 읽는다(파일 이름 규칙).
-입력은 `work/profile.md`의 slug와 "화면 목록"이다. 없으면 scout를 먼저 실행한다.
+입력은 `work/profile.md`의 slug와 "화면 목록"이다. 없으면 scout를 먼저 실행한다. `/reel:cut`이 입력 경로(예: `profile.new.md`)를 넘겼으면 그 경로를 읽는다(`../../shared/work-layout.md` "입력").
 
 포트폴리오에서 사람들이 가장 먼저 보는 것은 화면이다. 그래서 "있는 화면 아무거나"가 아니라
 **사례를 보여 주는 화면**을 우선한다 — 사례에 나온 기능(예: 긴급 알림, 오류 목록, 다크 테마)이 보이는 화면이 먼저다.
@@ -83,7 +83,7 @@ dev 서버로 찍을 수밖에 없으면 프로덕션 빌드(`build` → `start`
 - 화면 이름 — 이유(로그인 필요 / 기기 없음 / …)
 ```
 
-images.md도 덮어쓰기 규칙(`check` → 쓰기 → `record`)을 따른다.
+images.md도 덮어쓰기 규칙(`check` → 쓰기 → `record`)을 따른다. 완료 기록(`work-guard.sh mark work images <TO>`)은 쓴 직후가 아니라 검수를 통과한 뒤에 남긴다 — `../../shared/work-layout.md` "완료 기록". `/reel:cut` 안에서는 커맨드가 남기고, 따로 불렸으면 `../../shared/scripts/check-work.sh work` 뒤에 같은 조건으로 남긴다.
 
 "한 줄 설명"은 화면이 무엇인지가 아니라 **그 화면에서 보이는 기술적 포인트**를 쓴다(예: "회전 QR · 캡처 방지").
 portfolio가 이 표를 화면 갤러리로 그대로 쓴다.

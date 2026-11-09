@@ -11,39 +11,57 @@ description: 프로젝트 저장소(코드 · git 이력 · 문서)를 읽어 �
 
 ## 0. 다시 실행할 때 — 바뀐 커밋만 본다
 
-전체 분석은 비싸다. `work-guard.sh head work`(이 스킬 폴더 기준 `../../shared/scripts/`)로 지난번에 분석한 커밋을 읽고,
-`git rev-parse --short HEAD`와 비교해 정한다. `/reel:cut --full`이거나 `work/profile.md`가 없으면 바로 전체 분석이다.
+전체 분석은 비싸다. 범위는 `../../shared/work-layout.md` "단계별 기준 커밋"대로 정한다 — `/reel:cut`이 넘긴 `FROM`/`TO`를 쓰고,
+따로 불렸으면 `TO`=지금 HEAD, `FROM`=`work-guard.sh mark work profile`(이 스킬 폴더 기준 `../../shared/scripts/`).
+`--full`이거나 `work/profile.md`가 없으면 바로 전체 분석이다. 이 단계의 git 명령은 모두 `HEAD` 대신 `TO`로 쓴다.
 
 | 상황 | 할 일 |
 |---|---|
-| 기록 없음 | 전체 분석(1장부터) |
-| 같은 커밋 · 작업 트리 깨끗 | **건너뛴다.** profile.md를 그대로 쓰고 "변경 없음 (@ <해시>)"이라고 알린다 |
-| 지난 커밋이 지금 HEAD의 조상(`git merge-base --is-ancestor <지난> HEAD`) | **증분 분석.** 아래 |
+| FROM 없음 | 전체 분석(1장부터) |
+| FROM = TO · 작업 트리 깨끗 | **건너뛴다.** profile.md를 그대로 쓰고 "변경 없음 (@ <해시>)"이라고 알린다 |
+| FROM이 TO의 조상(`git merge-base --is-ancestor FROM TO`) | **증분 분석.** 아래 |
 | 조상이 아님(rebase · 브랜치 이동) | 전체 분석. 이유를 한 줄 알린다 |
 
-**증분 분석.** 기존 profile.md를 바탕으로 `<지난>..HEAD` 범위만 읽는다.
-- `git log --author=<나> --date=short --pretty='%h %ad %s' <지난>..HEAD`와 `git diff --stat <지난>..HEAD`로 무엇이 바뀌었나 본다
+**증분 분석.** 기존 profile.md를 바탕으로 `FROM..TO` 범위만 읽는다.
+- `git log <나> --date=short --pretty='%h %ad %s' FROM..TO`와 `git diff --stat FROM..TO`로 무엇이 바뀌었나 본다(`<나>`는 1장의 작성자 인자)
 - 기간 · 커밋 수 · 규모(화면 · 라우트 · 테스트 수)는 다시 센다 — 명령 몇 개라 싸고, 옛 숫자가 남는 게 더 위험하다
 - 매니페스트 · 라우팅 · 문서가 바뀐 경우에만 기술 스택 · 화면 목록 · 실측값을 다시 읽는다
 - 새 커밋에서 사례 후보가 나오면 표 끝에 붙이고 `(새)`로 표시한다. 기존 후보는 그대로 둔다
 - "나를 정한다"(1장)는 기존 profile의 결론을 그대로 쓴다. 새 작성자가 생겼을 때만 다시 묻는다
-- 머리말의 `@ 해시`를 새 HEAD로 바꾼다
+- 머리말의 `@ 해시`를 TO로 바꾼다
 
 profile.md는 덮어쓰기 규칙(`../../shared/work-layout.md`)을 따른다 — 사용자가 고친 profile이면 `profile.new.md`에 쓰고 알린다.
-다 쓴 뒤 `record`하고, 분석한 커밋을 `work-guard.sh head work <HEAD 짧은 해시>`로 남긴다(전체 · 증분 모두).
+쓴 뒤 `record`한다(`profile.new.md`도). 완료 기록(`mark work profile <TO>`)은 검수를 통과하고 profile이 정식 경로에 있을 때만 남긴다 —
+`profile.new.md`만 생겼으면 남기지 않아야 다음 실행이 옛 profile.md를 "최신"으로 착각하지 않는다(`../../shared/work-layout.md` "완료 기록").
+`/reel:cut` 안에서는 커맨드가 남기고, 따로 불렸으면 `check-work.sh` 뒤에 같은 조건으로 남긴다.
 
 ## 1. 나를 정한다
 
 git 저장소라면 `git config user.name` / `user.email`과 `git shortlog -sne --all`을 비교해 "내 커밋"을 정한다.
 같은 사람이 이메일 여러 개(회사 메일, GitHub noreply 등)로 커밋했을 수 있으니 이름이 같은 줄은 합쳐서 센다.
 작성자가 여러 명이고 어느 쪽이 사용자인지 확실하지 않으면 사용자에게 묻는다 — 남의 작업을 내 것으로 쓰면 안 된다.
+
+정한 이메일은 profile 머리말에 `작성자: a@x.com, b@y.com`으로 남기고, 이후 git 명령에는 **작성자 인자**로 넘긴다:
+`--fixed-strings --author=a@x.com --author=b@y.com`. `--author`는 기본이 정규식이라 `이름|이메일` 같은 OR가 안 되고
+이메일의 `.` `+`도 특수문자로 읽힌다. `--author`를 여러 번 주면 OR, `--fixed-strings`면 글자 그대로 찾는다.
 git이 아니면 그 사실을 적고, 기여 범위는 `TODO`로 남긴다.
 
 **대상이 저장소의 하위 폴더일 때(모노레포).** `git rev-parse --show-toplevel`로 git 루트를 먼저 확인한다.
 경로로 거른 로그(`git log -- <폴더>`)는 하위 폴더가 다른 저장소에서 합쳐진 경우(subtree merge, "history preserved")
 그 전 이력을 놓친다 — 그때 파일은 `src/...`처럼 접두사 없는 경로에 있었다. 커밋 수 · 기간 · 사례 후보는
-작성자 기준(`git log --all --author=<나>`)으로 찾고, 루트의 다른 폴더(서버 · 인프라)를 누가 맡았는지 함께 적는다.
+작성자 기준(`git log --all <나>`)으로 **후보**를 찾고, 루트의 다른 폴더(서버 · 인프라)를 누가 맡았는지 함께 적는다.
 `git show <hash>:<file>`도 그 커밋 시점의 경로로 써야 한다.
+
+작성자 후보는 "이 사람의 커밋"이지 "이 프로젝트의 커밋"이 아니다. 같은 사람이 같은 저장소에서 다른 앱 · 서버도 맡았을 수 있다.
+후보마다 **프로젝트 귀속**을 확인하고, 아래 둘 중 하나에 들어야 프로젝트 커밋으로 센다.
+1. 지금 경로: `git log --format=%h TO -- <폴더>`에 있는 커밋
+2. 합쳐지기 전 이력: 폴더를 들여온 병합 커밋을 찾고(`git log --merges --format='%h %s' TO -- <폴더>`,
+   메시지에 "Add '<폴더>/' from commit", "Merge … as '<폴더>'" 등), 그 병합의 두 번째 부모 쪽 이력
+   (`git log --format=%h <병합>^1..<병합>^2`)에 있는 커밋. 병합이 여러 번이면 각각 본다
+
+둘 다 아니면 커밋 수 · 기간 · 사례 후보에서 빼고, profile의 "한눈에 > 내 기여"에 "같은 저장소의 다른 영역 커밋 n개(제외)"로만 적는다.
+루트 공용 설정처럼 판단이 서지 않는 커밋은 "확인 필요"에 넣는다. 귀속 방법(폴더 · 병합 커밋)은 profile 머리말에
+`귀속: <폴더> + <병합 해시>^2`처럼 남긴다 — 뒤 단계(portfolio의 change-log.sh)가 같은 범위를 쓴다.
 
 **AI 공동 작성 커밋.** 커밋 메시지에 `Co-Authored-By: Claude`(또는 다른 AI 도구), "codex 리뷰 반영" 같은 흔적이 있으면
 비율을 세서 profile의 "작업 방식"에 사실로 적는다. 숨기거나 빼지 않는다 — 면접에서 반드시 나오는 질문이다.
@@ -62,8 +80,8 @@ git이 아니면 그 사실을 적고, 기여 범위는 `TODO`로 남긴다.
 2. 매니페스트: `package.json`, `app.json`/`app.config.*`, `pyproject.toml`, `build.gradle`, `Podfile` 등 → 스택 · 버전 · 스크립트
 3. 진입점과 라우팅 → 화면(페이지) 목록. 이것이 shots의 촬영 목록이 된다
 4. 데이터 · 상태 계층(API 클라이언트, 쿼리, 스토어, 인증), 네이티브 모듈, 테스트
-5. git 이력: `git log --author=<나> --date=short --pretty='%h %ad %s'`, 첫 커밋 · 마지막 커밋, 큰 변경
-   (`git log --author=<나> --shortstat`), `fix`·`perf`·`refactor`·`revert` 같은 메시지
+5. git 이력: `git log <나> --date=short --pretty='%h %ad %s' TO`, 첫 커밋 · 마지막 커밋, 큰 변경
+   (`git log <나> --shortstat TO`), `fix`·`perf`·`refactor`·`revert` 같은 메시지
 
 저장소가 크면 `scout-analyst` 에이전트에 하위 영역별 조사를 맡기고 요약만 받아도 된다.
 
@@ -84,7 +102,8 @@ git이 아니면 그 사실을 적고, 기여 범위는 `TODO`로 남긴다.
 ```markdown
 # <프로젝트명> — 프로젝트 프로필
 
-> slug: `<slug>` · 근거: 이 저장소 @ <HEAD 짧은 해시> (<YYYY.MM.DD>) 기준
+> slug: `<slug>` · 근거: 이 저장소 @ <TO 짧은 해시> (<YYYY.MM.DD>) 기준
+> 작성자: <이메일, …> · 귀속: <폴더 · 병합 커밋 — 모노레포일 때만>
 
 ## 한눈에
 | 항목 | 내용 | 근거 |
