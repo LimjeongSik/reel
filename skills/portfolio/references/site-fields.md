@@ -19,6 +19,7 @@
 | 사례.changes | `changes: { file, commit?, before?, after, note }[]` | `commit` 형식 "짧은 해시 · YYYY.MM.DD". before가 없으면 생략 |
 | 화면 | `screens: { src, srcAlt?, name, note, path? }[]` | 웹이면 `path`에 경로. 모든 화면이 srcAlt를 가지면 `screenModes: { labels, note }` 추가 |
 | 보조 이미지 | `sheets: { src, title, note }[]` | |
+| 변경 기록 | (없음 — 2026.10 기준 타입에 필드 없음) | 사이트에 옮기려면 사용자에게 먼저 묻는다. 예: `improvements: { title, before, after, why, metrics?, commits }[]`. 노션 · PDF에는 섹션 그대로 |
 
 ## 옮기는 순서
 

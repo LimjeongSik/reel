@@ -8,7 +8,7 @@ description: work/profile.md와 work/cases/를 바탕으로 이력서 · 경력�
 먼저 이 스킬 폴더 기준 `../../shared/writing-rules.md`를 읽는다. 특히 3장(같은 이야기를 두 번 쓰지 않는다)과
 4장(고르는 문서다)이 이 스킬의 핵심이다.
 
-입력: `work/profile.md`, `work/cases/*.md`. 없으면 scout → clips를 먼저 실행한다.
+입력: `work/profile.md`, `work/cases/*.md`. 없으면 scout → clips를 먼저 실행한다. `/reel:cut`이 입력 경로(예: `profile.new.md`)를 넘겼으면 그 경로를 읽는다(`../../shared/work-layout.md` "입력").
 
 **사용자의 기존 이력서를 먼저 읽는다**(예: `~/Desktop/Portfolio/resume/resume.md`, `resume/content.js` — 위치를 모르면 묻는다).
 - 소속 · 직함 · 재직 기간은 거기서 가져온다(저장소로는 알 수 없다). 가져온 사실은 머리말에 출처를 적는다
@@ -90,7 +90,8 @@ description: work/profile.md와 work/cases/를 바탕으로 이력서 · 경력�
 
 - 다 쓴 뒤 `../../shared/writing-rules.md` 5-1의 표로 문장을 한 번 더 고친다. 번역투 · 명사 나열 · 커밋 메시지 말투가 남아 있지 않게.
 - 쓰기 전 `check`, 쓴 뒤 `record` — `../../shared/work-layout.md`의 덮어쓰기 규칙. 사용자가 고친 원고면 `*.new.md`에 쓴다.
-- 마지막에 `../../shared/scripts/check-work.sh work`를 돌려 오류(✗)를 고친다.
+- 완료 기록(`work-guard.sh mark work resume <TO>`)은 쓴 직후가 아니라 검수를 통과한 뒤에 남긴다 — `../../shared/work-layout.md` "완료 기록". `/reel:cut` 안에서는 커맨드가 남기고, 따로 불렸으면 아래 검수 뒤에 같은 조건으로 남긴다.
+- 따로 불렸을 때만: 마지막에 `../../shared/scripts/check-work.sh work`를 돌려 오류(✗)를 고친다(고치는 범위는 work-layout.md "마무리 점검").
 
 - 1장 bullet은 "행동 동사 + 무엇을 + 어떻게(기술) + 결과"를 한 줄에. 결과가 수치면 수치를, 없으면 확인 수준을
   ("양 플랫폼 실기기 확인"). 한 줄이 두 줄을 넘으면 너무 긴 것이다.
@@ -98,4 +99,4 @@ description: work/profile.md와 work/cases/를 바탕으로 이력서 · 경력�
 - 사례 순서는 cases/ 번호 그대로. 순서를 바꾸고 싶으면 cases/ 파일 번호부터 바꾼다(포트폴리오 · 이미지 목록의 ①②가 어긋나지 않게).
 - 2장은 프로젝트를 회사 경력 안에서 쓸 때만 의미가 있다. 개인 · 외주 프로젝트면 "해당 없음"이라고 쓴다.
 - 기간 형식은 `YYYY.MM — YYYY.MM` / `YYYY.MM — 현재`. 사용자의 이력서 템플릿이 이 형식으로 기간을 계산하는 경우가 많다.
-- 다 쓰고 나면 사용자에게 1장(짧은 버전)을 보여 주고 "확인 필요" 목록을 함께 묻는다.
+- 다 쓰고 나면 사용자에게 1장(짧은 버전)을 보여 주고 "확인 필요" 목록을 함께 묻는다. `/reel:cut` 안에서는 질문할 항목만 돌려준다.

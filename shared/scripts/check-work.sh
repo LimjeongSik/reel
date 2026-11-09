@@ -55,7 +55,7 @@ each err <<< "$hits"
 
 # 3. 사례 번호는 01부터 빈틈 · 중복 없이
 if [ -d "$work/cases" ]; then
-    nums="$(cd "$work/cases" && ls -1 | grep -E '^[0-9]{2}-.+\.md$' | grep -v '\.new\.md$' | cut -c1-2 || true)"
+    nums="$(cd "$work/cases" && ls -1 | grep -E '^[0-9]{2}-.+\.md$' | grep -vE '\.new(-[0-9]{2})?\.md$' | cut -c1-2 || true)"
     if [ -n "$nums" ]; then
         dup="$(echo "$nums" | uniq -d)"
         [ -z "$dup" ] || err "cases/: 번호 중복 $(echo $dup)"
@@ -80,12 +80,17 @@ hits="$(while IFS= read -r f; do
 done <<< "$files")"
 each warn <<< "$hits"
 
-# 6. TODO
-todo_total=0
+# 6. TODO — 정식 원고와 대체 원고(*.new.md · *.new-NN.md)를 나눠 센다. .reel/backup은 위 파일 목록에서 이미 빠진다.
+todo_total=0; todo_alt=0
 while IFS= read -r f; do
     c="$(grep -c 'TODO' "$work/$f" || true)"
-    if [ "$c" -gt 0 ]; then printf '  TODO %3d  %s\n' "$c" "$f"; todo_total=$((todo_total + c)); fi
+    [ "$c" -gt 0 ] || continue
+    if printf '%s' "$f" | grep -qE '\.new(-[0-9]{2})?\.md$'; then
+        printf '  TODO %3d  %s (대체 원고)\n' "$c" "$f"; todo_alt=$((todo_alt + c))
+    else
+        printf '  TODO %3d  %s\n' "$c" "$f"; todo_total=$((todo_total + c))
+    fi
 done <<< "$files"
 
-echo "오류 $errors · 경고 $warns · TODO $todo_total"
+echo "오류 $errors · 경고 $warns · TODO $todo_total · 대체 원고 TODO $todo_alt"
 [ "$errors" -eq 0 ]
