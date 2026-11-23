@@ -8,15 +8,18 @@ argument-hint: "[all|resume|portfolio|images] [대상 경로] [--full]"
 인자에서 모드(기본 `all`), 대상 경로(기본 현재 디렉터리), `--full`(처음부터 다시 분석) 여부를 읽는다.
 결과는 모두 `<대상 경로>/work/`에 쓴다. 스크립트는 플러그인 폴더의 `shared/scripts/`에 있다(scout 스킬 폴더 기준 `../../shared/scripts/`).
 
-0. **준비.** `work-guard.sh begin <대상 경로>/work`. 출력된 파일별 상태(`edited` · `unknown` · `alt`)를 기억해 둔다 —
+0. **준비.** `work-guard.sh begin <대상 경로>/work`. 3으로 끝나면(다른 실행이 진행 중) 사용자에게 묻고, 다른 실행이 없다고 하면 `begin <work> --force`.
+   출력된 파일별 상태(`edited` · `unknown` · `alt`)와 `stale: <단계> — <이유>` 줄을 기억해 둔다 —
    이후 모든 쓰기는 `shared/work-layout.md`의 덮어쓰기 규칙(check → 쓰기 → record, 대체 원고도 record)을 따른다.
    `begin`이 이번 실행 목록을 비우므로, 이후 "이번 실행에서 쓴 파일"은 `work-guard.sh run work`로 본다.
    **범위를 고정한다**(`shared/work-layout.md` "단계별 기준 커밋"): `TO`는 지금 HEAD, 이번 모드가 지나는 단계마다
-   `FROM`은 `work-guard.sh mark work <단계>`(`--full`이면 모두 비움). 각 스킬에 그 단계의 `FROM`/`TO`를 넘기고,
+   `FROM`은 `work-guard.sh mark work <단계>`(`--full`이면 모두 비움). 각 스킬을 부르기 직전에 `work-guard.sh snap work <단계>`
+   (그 단계가 읽을 입력 원고의 해시를 잡아 둔다 — 앞 단계가 끝난 뒤여야 한다). 각 스킬에 그 단계의 `FROM`/`TO`를 넘기고,
    스킬은 `HEAD`가 아니라 이 범위로 읽는다. 단계 이름: scout=`profile` · clips=`cases` · shots=`images` · `resume` · `portfolio`.
 1. **scout** 스킬 → `work/profile.md`. scout가 FROM/TO를 보고 전체 분석 · 증분 분석 · 건너뛰기를 정한다.
    끝나면 "확인 필요" 목록을 사용자에게 한 번에 묻고, 답을 반영한 뒤 진행한다(사용자가 "나중에"라고 하면 `TODO`로 남기고 진행).
-   이번 모드의 모든 단계가 이미 `TO`까지 반영됐고(`mark`가 모두 `TO`) 작업 트리가 깨끗하면, 다시 쓸지 묻고 아니라면 4번(검수)으로 간다.
+   이번 모드의 모든 단계가 이미 `TO`까지 반영됐고(`mark`가 모두 `TO`) `stale`인 단계가 없고 작업 트리가 깨끗하면, 다시 쓸지 묻고 아니라면 4번(검수)으로 간다.
+   `stale`인 단계는 커밋이 같아도 건너뛰지 않고, 그 이유(바뀐 입력 · reel 버전)를 스킬에 넘긴다(`shared/work-layout.md` "입력이 바뀐 단계").
 2. 모드별로:
    - `all`: clips → shots → resume → portfolio
    - `resume`: clips → resume
@@ -33,14 +36,18 @@ argument-hint: "[all|resume|portfolio|images] [대상 경로] [--full]"
    예외: "어느 커밋이 내 것인가"처럼 답이 없으면 다음 단계가 남의 작업을 쓰게 되는 질문은 그 자리에서 묻는다.
 3. **모아서 묻는다.** 2번의 스킬들이 돌려준 질문을 단계별로 묶어 한 번에 묻는다. 답은 `run`에 `canon` · `alt`로 나온 파일에만
    반영하고 `record`한다. 그 밖의 파일(지난 실행 파일, 사람이 고친 원고)에 반영할 내용은 `check`가 준 대체 경로에 쓴다.
-4. **검수.** `check-work.sh <대상 경로>/work`. 오류(✗)는 `shared/work-layout.md` "마무리 점검"대로 고친다 —
+   답으로 앞 단계 원고(profile · cases · images.md)가 바뀌었으면 그것을 읽는 뒤 단계도 맞춘다: 그 단계를 `snap` → 바뀐 원고를 읽고
+   그 단계 원고의 해당 부분을 고침 → `record`. 맞추지 않은 단계는 5번에서 `mark`가 거부한다.
+4. **검수.** `check-work.sh <대상 경로>/work`. 커밋 해시 · 날짜 · 작성자와 전 → 후 코드 발췌까지 대조한다. 오류(✗)는 `shared/work-layout.md` "마무리 점검"대로 고친다 —
    `run`에 `canon` · `alt`로 나온 파일은 고치고 다시 `record`, 그 밖의 파일은 고치지 않고 보고한다. 고쳤으면 다시 돌린다.
 5. **완료 기록.** 이번 모드가 지난 단계마다 `shared/work-layout.md` "완료 기록"의 조건(그 단계 파일이 모두 `canon`,
    그 단계 파일에 남은 ✗ 없음, 입력이 모두 정식 원고)을 확인하고, 만족하는 단계만 `work-guard.sh mark work <단계> <TO>`.
+   mark가 "읽은 뒤 입력이 바뀌어" 1로 끝나면 그 단계는 기록하지 않고 7번 보고에 이유로 적는다(다음 실행이 `stale`로 다시 본다).
 6. `work/README.md`를 갱신한다(덮어쓰기 규칙을 따른다): 만들어진 파일과 각각의 쓰임(어느 지원서 칸 · 사이트 필드에 쓰는지),
    `TODO` 모음(4번 출력의 파일별 TODO — `grep -r`은 `.reel/backup/`까지 잡으므로 쓰지 않는다. 정식 원고와 대체 원고를 나눠 적는다),
    찍지 못한 화면, 이번에 생긴 `*.new*.md`, 단계별 반영한 커밋(`begin` 출력의 `mark`와 5번에서 남긴 값), 보류한 단계.
    README도 `record`한다(단계에는 속하지 않는다).
 7. 사용자에게는 짧게 보고한다: 만든 파일 목록, 사례 제목들, 채워야 할 TODO 개수(정식 · 대체), 점검 결과(오류 · 경고 수),
-   `*.new*.md`로 비켜 쓴 파일, 완료 기록을 남기지 않은 단계와 이유(대체 원고 · 남은 오류 · 대체 입력), 보류한 단계.
-   원고 전문을 대화에 붙여 넣지 않는다.
+   `*.new*.md`로 비켜 쓴 파일, 완료 기록을 남기지 않은 단계와 이유(대체 원고 · 남은 오류 · 대체 입력), 보류한 단계,
+   다른 작성자 커밋 경고가 있었으면 그 커밋. 제출 전에 `check-work.sh work --public`으로 내부 흔적을 확인하라고 한 줄 안내한다.
+   원고 전문을 대화에 붙여 넣지 않는다. 보고 직전에 `work-guard.sh end <대상 경로>/work`.

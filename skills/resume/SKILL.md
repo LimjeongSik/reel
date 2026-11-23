@@ -90,11 +90,13 @@ description: work/profile.md와 work/cases/를 바탕으로 이력서 · 경력�
 
 - 다 쓴 뒤 `../../shared/writing-rules.md` 5-1의 표로 문장을 한 번 더 고친다. 번역투 · 명사 나열 · 커밋 메시지 말투가 남아 있지 않게.
 - 쓰기 전 `check`, 쓴 뒤 `record` — `../../shared/work-layout.md`의 덮어쓰기 규칙. 사용자가 고친 원고면 `*.new.md`에 쓴다.
-- 완료 기록(`work-guard.sh mark work resume <TO>`)은 쓴 직후가 아니라 검수를 통과한 뒤에 남긴다 — `../../shared/work-layout.md` "완료 기록". `/reel:cut` 안에서는 커맨드가 남기고, 따로 불렸으면 아래 검수 뒤에 같은 조건으로 남긴다.
+- 따로 불렸으면 입력 원고를 읽기 직전에 `work-guard.sh snap work resume`(/reel:cut 안에서는 커맨드가 한다). 완료 기록(`work-guard.sh mark work resume <TO>`)은 쓴 직후가 아니라 검수를 통과한 뒤에 남긴다 — `../../shared/work-layout.md` "완료 기록". `/reel:cut` 안에서는 커맨드가 남기고, 따로 불렸으면 아래 검수 뒤에 같은 조건으로 남긴다.
 - 따로 불렸을 때만: 마지막에 `../../shared/scripts/check-work.sh work`를 돌려 오류(✗)를 고친다(고치는 범위는 work-layout.md "마무리 점검").
 
 - 1장 bullet은 "행동 동사 + 무엇을 + 어떻게(기술) + 결과"를 한 줄에. 결과가 수치면 수치를, 없으면 확인 수준을
   ("양 플랫폼 실기기 확인"). 한 줄이 두 줄을 넘으면 너무 긴 것이다.
+- 수치는 사례 지표 표의 구분이 `측정` · `기록` · `사용자 확인`인 것만 쓴다. `목표`는 성과로 쓰지 않는다(writing-rules 1-1).
+- 제출 전에는 `../../shared/scripts/check-work.sh work --public resume.md`로 TODO · HTML 주석 · 로컬 경로 · 내부 주소가 남았는지 본다.
 - 1장과 3장의 문장을 똑같이 복사하지 않는다. 1장은 결과 중심, 3장은 과정 중심이다.
 - 사례 순서는 cases/ 번호 그대로. 순서를 바꾸고 싶으면 cases/ 파일 번호부터 바꾼다(포트폴리오 · 이미지 목록의 ①②가 어긋나지 않게).
 - 2장은 프로젝트를 회사 경력 안에서 쓸 때만 의미가 있다. 개인 · 외주 프로젝트면 "해당 없음"이라고 쓴다.
