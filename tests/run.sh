@@ -51,6 +51,7 @@ expect_code "check: 고친 파일은 edited" 1 "$guard" check "$w" profile.md
 mkdir -p "$w/cases"; echo x > "$w/cases/01-a.md"
 expect_code "record: 하위 폴더" 0 "$guard" record "$w" cases/01-a.md
 expect_code "check: 하위 폴더 clean" 0 "$guard" check "$w" cases/01-a.md
+"$guard" end "$w"
 expect_code "begin: 다시 실행" 0 "$guard" begin "$w"
 expect_out  "begin: 고친 파일 표시" "edited   profile.md"
 expect_out  "begin: 그대로인 파일 표시" "clean    cases/01-a.md"
@@ -64,6 +65,7 @@ echo x > "$w/profile.new-02.md"
 expect_code "check: 그다음 빈 경로" 1 "$guard" check "$w" profile.md
 expect_out  "new-03" "profile.new-03.md"
 rm "$w/profile.new-02.md"
+"$guard" end "$w"
 expect_code "begin: 대체 원고 포함" 0 "$guard" begin "$w"
 expect_out  "begin: 대체 원고 상태" "alt      profile.new.md"
 b="$(ls -1d "$w/.reel/backup/"* | sort | tail -1)"
@@ -71,6 +73,7 @@ b="$(ls -1d "$w/.reel/backup/"* | sort | tail -1)"
 rm "$w/profile.new.md"
 
 echo "run: 이번 실행에서 쓴 파일"
+"$guard" end "$w"
 expect_code "begin: 새 실행" 0 "$guard" begin "$w"
 "$guard" run "$w" >"$tmp/out" 2>&1
 [ ! -s "$tmp/out" ] && ok "run: begin 직후 비어 있음" || bad "run: begin 직후 비어 있음"
@@ -86,6 +89,7 @@ echo "사람이 실행 중에 고침" >> "$w/cases/01-a.md"
 "$guard" run "$w" >"$tmp/out" 2>&1
 expect_out  "run: 쓴 뒤 고쳐지면 changed" "changed cases/01-a.md"
 echo "지난 실행 파일" > "$w/resume.md"; "$guard" record "$w" resume.md
+"$guard" end "$w"
 expect_code "begin: 다음 실행" 0 "$guard" begin "$w"
 expect_code "check: 지난 실행 파일은 clean" 0 "$guard" check "$w" resume.md
 "$guard" run "$w" >"$tmp/out" 2>&1
@@ -94,6 +98,7 @@ rm -f "$w/profile.new.md" "$w/resume.md"
 
 echo "adopt: 대체 원고 작성 → 채택 → 검수 → 완료 기록"
 echo "사람이 고친 profile" > "$w/profile.md"            # 기록 없는 정식 원고 → 대체 경로로 비켜 씀
+"$guard" end "$w"
 expect_code "begin" 0 "$guard" begin "$w"
 expect_code "check: 비켜 쓸 경로" 1 "$guard" check "$w" profile.md
 expect_out  "대체 경로" "profile.new.md"
@@ -127,15 +132,72 @@ expect_out  "옛 기록 값" "$c1"
 "$guard" head "$w" "$c2"
 expect_code "head: 읽기" 0 "$guard" head "$w"
 expect_out  "head: 기록한 값" "$c2"
+expect_code "mark: snap 없이는 기록 안 함" 1 "$guard" mark "$w" resume "$c1"
+expect_out  "snap 안내" "snap work resume"
+"$guard" snap "$w" resume
 "$guard" mark "$w" resume "$c1"
 expect_code "mark: 단계별로 따로" 0 "$guard" mark "$w" resume
 expect_out  "resume 기준" "$c1"
 expect_code "mark: 다른 단계는 그대로 없음" 1 "$guard" mark "$w" portfolio
-"$guard" mark "$w" resume "$c2"
+"$guard" snap "$w" resume; "$guard" mark "$w" resume "$c2"
 "$guard" mark "$w" resume >"$tmp/out" 2>&1
 expect_out  "mark: 덮어씀" "$c2"
+"$guard" end "$w"
 expect_code "begin: 단계별 기준 출력" 0 "$guard" begin "$w"
 expect_out  "begin: mark 출력" "mark: resume $c2"
+
+echo "work-guard.sh: 입력이 바뀐 단계 · 동시 실행 · 잠금"
+"$guard" end "$w"
+mkdir -p "$w/cases"; echo "p1" > "$w/profile.md"; echo "c1" > "$w/cases/01-a.md"
+"$guard" record "$w" profile.md cases/01-a.md
+"$guard" snap "$w" resume; "$guard" mark "$w" resume "$c2"
+expect_code "stale: 기록 직후엔 그대로(1)" 1 "$guard" stale "$w" resume
+echo "사람이 고친 사례" >> "$w/cases/01-a.md"
+expect_code "stale: 입력 원고가 바뀌면 0" 0 "$guard" stale "$w" resume
+expect_out  "stale: 바뀐 입력" "cases/01-a.md 바뀜"
+echo x > "$w/cases/02-b.md"
+"$guard" stale "$w" resume >"$tmp/out" 2>&1
+expect_out  "stale: 새 사례" "cases/02-b.md 새로 생김"
+echo x > "$w/cases/03-c.new.md"
+"$guard" stale "$w" resume >"$tmp/out" 2>&1
+if grep -qF "03-c.new.md" "$tmp/out"; then bad "stale: 대체 원고는 입력이 아님"; else ok "stale: 대체 원고는 입력이 아님"; fi
+rm -f "$w/cases/02-b.md" "$w/cases/03-c.new.md"
+"$guard" snap "$w" resume; "$guard" mark "$w" resume "$c2"
+expect_code "stale: 다시 기록하면 그대로" 1 "$guard" stale "$w" resume
+awk -F'\t' 'BEGIN{OFS="\t"} $1=="resume" && $2=="@reel" {$3="0.0.1"} {print}' "$w/.reel/inputs" > "$tmp/in" && cp "$tmp/in" "$w/.reel/inputs"
+"$guard" stale "$w" resume >"$tmp/out" 2>&1
+expect_out  "stale: reel 버전이 바뀜" "reel 0.0.1 →"
+expect_code "stale: 기록 없는 단계" 0 "$guard" stale "$w" portfolio
+expect_code "begin" 0 "$guard" begin "$w"
+expect_out  "begin: 입력이 바뀐 단계 출력" "stale: resume — reel 0.0.1 →"
+expect_code "begin: 진행 중이면 3" 3 "$guard" begin "$w"
+expect_out  "begin: 진행 중 안내" "다른 reel 실행이 진행 중"
+expect_code "begin --force" 0 "$guard" begin "$w" --force
+expect_code "end" 0 "$guard" end "$w"
+[ ! -e "$w/.reel/active" ] && ok "end: 진행 중 표시 지움" || bad "end: 진행 중 표시 지움"
+printf '%s\told\n' "$(( $(date +%s) - 30000 ))" > "$w/.reel/active"
+expect_code "begin: 오래된 진행 중 표시는 무시" 0 "$guard" begin "$w"
+"$guard" end "$w"
+# 읽은 뒤 입력이 바뀌면 완료로 남기지 않는다(이력서는 옛 사례로 썼는데 사례만 고쳐진 경우)
+"$guard" snap "$w" resume
+echo "답변 반영" >> "$w/cases/01-a.md"
+expect_code "mark: 읽은 뒤 입력이 바뀌면 1" 1 "$guard" mark "$w" resume "$c1"
+expect_out  "mark: 바뀐 입력 안내" "cases/01-a.md 바뀜"
+expect_code "mark: 기록은 그대로" 0 "$guard" mark "$w" resume
+expect_out  "mark: 옛 기록 유지" "$c2"
+"$guard" snap "$w" resume
+expect_code "mark: 다시 읽고 나면 기록" 0 "$guard" mark "$w" resume "$c1"
+expect_code "stale: 다시 읽은 입력으로 기록돼 그대로" 1 "$guard" stale "$w" resume
+expect_code "snap: 알 수 없는 단계" 1 "$guard" snap "$w" nope
+"$guard" snap "$w" cases
+expect_code "begin" 0 "$guard" begin "$w" --force
+expect_code "mark: begin 뒤엔 지난 실행의 snap을 쓰지 않음" 1 "$guard" mark "$w" cases "$c1"
+"$guard" end "$w"
+mkdir -p "$w/.reel/lock"; echo 999999 > "$w/.reel/lock/pid"
+expect_code "잠금: 끝난 프로세스의 잠금은 치움" 0 "$guard" record "$w" profile.md
+[ ! -e "$w/.reel/lock" ] && ok "잠금: 명령이 끝나면 풂" || bad "잠금: 명령이 끝나면 풂"
+ls "$w/.reel/" | grep -qE '\.[A-Za-z0-9]{6}$' && bad "임시 파일이 남지 않음" || ok "임시 파일이 남지 않음"
+rm -rf "$w/cases" "$w/profile.md"
 
 echo "check-work.sh"
 rm -rf "$w/cases" "$w/profile.md"; mkdir -p "$w/cases" "$w/images"
@@ -183,6 +245,89 @@ mkdir -p "$w/.reel/backup/x"; echo "TODO" > "$w/.reel/backup/x/old.md"
 if grep -qF "old.md" "$tmp/out"; then bad "백업은 TODO에서 제외"; else ok "백업은 TODO에서 제외"; fi
 rm -f "$w/portfolio.new-02.md" "$w/cases/03-alt.new.md"
 
+echo "check-work.sh: 코드 발췌 대조"
+rm -f "$w/cases/02-bad.md" "$w/cases/04-gap.md" "$w/portfolio.md"
+cat > "$w/cases/02-code.md" <<EOF
+# ② 발췌
+- 관련 커밋: \`$c2 · 2026.07.14\`
+## 전 → 후
+### \`a.txt\` · \`$c2 · 2026.07.14\`
+**전**
+\`\`\`
+a
+\`\`\`
+**후**
+\`\`\`
+a
+// ...
+  b
+\`\`\`
+EOF
+expect_code "실제 코드와 같은 발췌는 통과" 0 "$check" "$w"
+expect_out  "발췌 수" "코드 발췌 2개 대조"
+cat > "$w/portfolio.md" <<EOF
+- **changes**:
+  - file: \`a.txt\` · commit: \`$c2 · 2026.07.14\`
+  - before:
+    \`\`\`
+    a
+    b
+    \`\`\`
+  - after:
+    \`\`\`
+    a
+    <redacted>
+    \`\`\`
+  - file: \`nope.txt\` · commit: \`$c2 · 2026.07.14\`
+  - after:
+    \`\`\`
+    x
+    y
+    \`\`\`
+EOF
+expect_code "다른 발췌는 실패" 1 "$check" "$w"
+expect_out  "전 코드 불일치(portfolio 꼴)" "portfolio.md:4: 전 코드가 $c2^:a.txt 와 1줄이 다릅니다 — 첫 줄: b"
+if grep -qF "portfolio.md:9" "$tmp/out"; then bad "<redacted> 줄은 건너뜀"; else ok "<redacted> 줄은 건너뜀"; fi
+expect_out  "없는 파일" "출처 $c2:nope.txt 가 저장소에 없습니다"
+if [ "$(grep -c 'nope.txt' "$tmp/out")" -eq 1 ]; then ok "출처 없는 블록은 한 번만 보고"; else bad "출처 없는 블록은 한 번만 보고"; fi
+rm -f "$w/portfolio.md"
+mkdir -p "$repo/d"; echo one > "$repo/d/b.txt"; echo two > "$repo/d_b.txt"; git -C "$repo" add d d_b.txt
+GIT_AUTHOR_DATE='2026-07-15T10:00:00' GIT_COMMITTER_DATE='2026-07-15T10:00:00' git -C "$repo" commit -qm paths
+cp_="$(git -C "$repo" rev-parse --short=7 HEAD)"
+printf '# ③\n### `d/b.txt` · `%s · 2026.07.15`\n**후**\n```\none\n```\n### `d_b.txt` · `%s · 2026.07.15`\n**후**\n```\none\n```\n' "$cp_" "$cp_" > "$w/cases/03-path.md"
+expect_code "경로 글자만 다른 두 파일은 따로 대조" 1 "$check" "$w"
+expect_out  "d_b.txt의 발췌가 d/b.txt 코드로 통과하지 않음" "후 코드가 $cp_:d_b.txt 와 1줄이 다릅니다"
+rm -f "$w/cases/03-path.md"
+git -C "$repo" reset -q --hard HEAD~1
+
+echo "check-work.sh: 제출본 검사"
+cat > "$w/resume.md" <<'EOF'
+# 이력서
+- 연락처: me@example.com
+- 로컬 /Users/me/app 경로
+- 데모: http://localhost:3000
+<!-- TODO: 기간 -->
+```ts
+fetch("http://localhost:3000")
+```
+EOF
+expect_code "--public 없이는 통과" 0 "$check" "$w" "$repo"
+expect_code "--public: 내부 흔적은 실패" 1 "$check" "$w" "$repo" --public
+expect_out  "TODO" "resume.md:5: TODO가 남았습니다"
+expect_out  "로컬 경로" "resume.md:3: 로컬 경로"
+expect_out  "내부 주소" "resume.md:4: 내부 주소"
+expect_out  "이메일은 경고" "resume.md:2: 이메일"
+if grep -qF "resume.md:7" "$tmp/out"; then bad "--public: 코드 블록 안 주소는 제외"; else ok "--public: 코드 블록 안 주소는 제외"; fi
+expect_out  "없는 제출본은 경고" "제출본 portfolio.md 가 없습니다"
+expect_code "--public: 파일 지정" 1 "$check" "$w" --public resume.md
+expect_code "알 수 없는 인자" 1 "$check" "$w" "$repo" --oops
+printf '%s\n' 'a: http://172.16.0.5' 'b: 172.31.255.1' 'c: 172.15.0.1' 'd: 172.32.0.1' 'e: 1172.16.0.1' > "$w/resume.md"
+"$check" "$w" "$repo" --public resume.md >"$tmp/out" 2>&1
+expect_out  "172.16.0.0/12 시작" "resume.md:1: 내부 주소"
+expect_out  "172.16.0.0/12 끝" "resume.md:2: 내부 주소"
+if grep -qE 'resume.md:[345]:' "$tmp/out"; then bad "172.15 · 172.32 · 1172.16은 잡지 않음"; else ok "172.15 · 172.32 · 1172.16은 잡지 않음"; fi
+rm -f "$w/resume.md"
+
 echo "change-log.sh"
 mkdir -p "$repo/src/__tests__"
 echo 'it("a")' > "$repo/src/__tests__/a.test.ts"; echo x > "$repo/src/list.ts"; git -C "$repo" add src
@@ -214,6 +359,14 @@ expect_code "경로로 거르기" 0 "$changes" "$repo" HEAD -- src
 expect_out  "경로 커밋 수" "커밋 1개"
 expect_out  "경로 표시" "경로: src"
 expect_code "알 수 없는 인자" 1 "$changes" "$repo" HEAD nobody
+
+echo "check-work.sh: 인용한 커밋의 작성자"
+other="$(git -C "$repo" log -1 --format=%h --author=o.k+1 --fixed-strings)"
+printf '# p\n> 작성자: T@example.com\n- `%s · 2026.07.14`\n- `%s`\n' "$c2" "$other" > "$w/profile.md"
+expect_code "작성자 경고는 실패가 아님" 0 "$check" "$w"
+expect_out  "다른 작성자 커밋 경고" "커밋 $other 작성자 o.k+1@example.com 는 profile의 작성자가 아닙니다"
+if grep -qF "커밋 $c2 작성자" "$tmp/out"; then bad "내 커밋은 경고 없음(대소문자 무시)"; else ok "내 커밋은 경고 없음(대소문자 무시)"; fi
+rm -f "$w/profile.md"
 
 echo "to-webp.sh"
 if command -v cwebp >/dev/null && command -v python3 >/dev/null; then

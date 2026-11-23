@@ -85,7 +85,7 @@ description: work/profile.md, work/cases/, work/images/를 바탕으로 포트�
 - **before**: 바뀌기 전 상태 한 문장 (커밋 · 코드에서 확인한 것)
 - **after**: 바뀐 뒤 상태 한 문장
 - **why**: 바꾼 이유 — 커밋 본문 · PR · 문서 · 이슈에 적힌 것만. 없으면 `<!-- TODO: 바꾼 이유 -->`
-- **metrics**: `라벨: 전 → 후 (출처)` (실측값이 있을 때만, 최대 3개)
+- **metrics**: `라벨: 전 → 후 (구분 · 출처)` (실측값이 있을 때만, 최대 3개)
 - **case**: ② (cases/에 같은 이야기가 있으면 번호만 적고 위 칸은 한 줄로)
 
 (개선 3~8개, 날짜 순)
@@ -115,11 +115,12 @@ description: work/profile.md, work/cases/, work/images/를 바탕으로 포트�
 
 - 다 쓴 뒤 `../../shared/writing-rules.md` 5-1의 표로 문장을 한 번 더 고친다. 번역투 · 명사 나열 · 커밋 메시지 말투가 남아 있지 않게.
 - 쓰기 전 `check`, 쓴 뒤 `record` — `../../shared/work-layout.md`의 덮어쓰기 규칙. 사용자가 고친 원고면 `*.new.md`에 쓴다.
-- 완료 기록(`work-guard.sh mark work portfolio <TO>`)은 쓴 직후가 아니라 검수를 통과한 뒤에 남긴다 — `../../shared/work-layout.md` "완료 기록". `/reel:cut` 안에서는 커맨드가 남기고, 따로 불렸으면 아래 검수 뒤에 같은 조건으로 남긴다.
+- 따로 불렸으면 입력 원고를 읽기 직전에 `work-guard.sh snap work portfolio`(/reel:cut 안에서는 커맨드가 한다). 완료 기록(`work-guard.sh mark work portfolio <TO>`)은 쓴 직후가 아니라 검수를 통과한 뒤에 남긴다 — `../../shared/work-layout.md` "완료 기록". `/reel:cut` 안에서는 커맨드가 남기고, 따로 불렸으면 아래 검수 뒤에 같은 조건으로 남긴다.
 - 따로 불렸을 때만: 마지막에 `../../shared/scripts/check-work.sh work`를 돌려 오류(✗)를 고친다(고치는 범위는 work-layout.md "마무리 점검").
 
 - problem · approach · result는 각각 2~4문장. cases/ 파일의 문제 · 해결 · 결과를 줄이되, 원인이 있던 층은 남긴다.
-- changes의 코드는 cases/ 파일의 발췌를 그대로 옮긴다. 여기서 새로 줄이거나 다듬지 않는다.
+- changes의 코드는 cases/ 파일의 발췌를 그대로 옮긴다. 여기서 새로 줄이거나 다듬지 않는다. `- file: \`경로\` · commit: \`해시 · 날짜\`` 줄도
+  그대로 둔다 — `check-work.sh`가 이 줄로 before · after 코드를 커밋과 대조한다.
 - 화면 표의 note는 "화면 설명"이 아니라 "그 화면에서 보이는 기술적 포인트"(예: "회전 QR · 캡처 방지").
   `work/images/images.md`가 없으면 profile.md의 화면 목록으로 표를 만들고 src 칸에 `<!-- TODO: 캡처 -->`.
 - 다 쓰고 나면 카드, 사례 제목, 개선 사항 제목 목록을 사용자에게 보여 준다(`/reel:cut` 안에서는 이유가 빈 묶음 같은 질문 항목과 함께 돌려준다). 사이트에 바로 옮기길 원하면 `references/site-fields.md`를 따른다.
@@ -170,8 +171,8 @@ $S <저장소> <병합>^1..<병합>^2 --author a@x.com                     # 모
 
 | 수치 | 구하는 법 | 쓸 때 |
 |---|---|---|
-| 메시지 · 문서에 적힌 실측값 | 출력의 "메시지 속 수치", 문서 grep | 출처(커밋 해시)와 함께. 가장 강한 근거 |
-| 테스트 수 전 → 후 | `git grep -cE '^\s*(it\|test)\(' <hash>^ -- <테스트 경로>`와 `<hash>`에서 같은 명령 | 안정성 개선 · 수정에 |
+| 메시지 · 문서에 적힌 실측값 | 출력의 "메시지 속 수치", 문서 grep | 출처(커밋 해시)와 구분(writing-rules 1-1)을 함께. 조건까지 적혀 있으면 `측정`, 숫자만 있으면 `기록`, "목표 · 예상"이면 쓰지 않는다 |
+| 테스트 수 전 → 후 | 두 커밋을 체크아웃할 수 있으면 러너의 수집 결과(`pytest --collect-only -q`, `vitest list` 등). 아니면 `git grep -cE '^\s*(it\|test)\(' <hash>^ -- <테스트 경로>`와 `<hash>`에서 같은 명령 | 안정성 개선 · 수정에. grep으로 셌으면 "테스트 선언 n개 → m개"로 쓴다 — 매개변수 테스트 · 동적 생성은 줄 수와 케이스 수가 다르다 |
 | 의존성 추가 · 제거 | `git diff <hash>^ <hash> -- package.json`(매니페스트) | 라이브러리를 걷어 낸 개선에 |
 | 코드 규모 전 → 후 | 같은 파일을 `git show <hash>^:<file> \| wc -l`과 `<hash>`에서 | 단순화한 개선에만. 늘어난 줄 수는 성과가 아니다 |
 | 바뀐 파일 · 줄 수 | 출력의 "파일" · "줄" | 헤드라인에 쓰지 않는다. 변경 범위를 설명할 때만 |
